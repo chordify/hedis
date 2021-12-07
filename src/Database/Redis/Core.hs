@@ -6,7 +6,7 @@ module Database.Redis.Core (
     Connection(..), ConnectError(..), connect, checkedConnect, disconnect,
     withConnect, withCheckedConnect,
     ConnectInfo(..), defaultConnectInfo,
-    Redis(), runRedis, unRedis, reRedis,
+    Redis(), runRedis, runRedisNonBlocking, unRedis, reRedis,
     RedisCtx(..), MonadRedis(..),
     send, recv, sendRequest,
     auth, select, ping
@@ -61,6 +61,15 @@ instance MonadRedis Redis where
 runRedis :: Connection -> Redis a -> IO a
 runRedis (Conn pool) redis =
   withResource pool $ \conn -> runRedisInternal conn redis
+
+-- |Interact with a Redis datastore specified by the given 'Connection', but return early
+--  if acquiring from the connection pool would block.
+--
+--  Like 'runRedis', but if all connections in the 'Connection' pool are used, it
+--  immediately returns 'Nothing'. This can be useful for logging purposes.
+runRedisNonBlocking :: Connection -> Redis a -> IO (Maybe a)
+runRedisNonBlocking (Conn pool) redis = do
+  tryWithResource pool $ \conn -> runRedisInternal conn redis
 
 -- |Deconstruct Redis constructor.
 --

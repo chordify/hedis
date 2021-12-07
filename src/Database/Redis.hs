@@ -157,7 +157,7 @@ module Database.Redis (
     --
     
     -- * The Redis Monad
-    Redis(), runRedis,
+    Redis(), runRedis, runRedisNonBlocking,
     unRedis, reRedis,
     RedisCtx(..), MonadRedis(..),
 
