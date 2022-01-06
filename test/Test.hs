@@ -132,7 +132,9 @@ testKeys :: Test
 testKeys = testCase "keys" $ do
     set "key" "value"     >>=? Ok
     get "key"             >>=? Just "value"
-    exists "key"          >>=? True
+    exists ["key"]        >>=? 1
+    exists ["key", "-"]   >>=? 1
+    exists ["-"]          >>=? 0
     keys "*"              >>=? ["key"]
     randomkey             >>=? Just "key"
     move "key" 13         >>=? True

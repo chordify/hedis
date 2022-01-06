@@ -655,9 +655,9 @@ infoSection section = sendRequest ["INFO", section]
 
 exists
     :: (RedisCtx m f)
-    => ByteString -- ^ key
-    -> m (f Bool)
-exists key = sendRequest ["EXISTS", key]
+    => [ByteString] -- ^ keys
+    -> m (f Integer)
+exists keys = sendRequest $ ["EXISTS"] ++ keys
 
 newtype Cursor = Cursor ByteString deriving (Show, Eq)
 
