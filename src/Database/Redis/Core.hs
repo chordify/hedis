@@ -140,7 +140,7 @@ sendRequest req = do
 
 -- |A threadsafe pool of network connections to a Redis server. Use the
 --  'connect' function to create one.
-newtype Connection = Conn (Pool PP.Connection)
+newtype Connection = Conn { getPool :: Pool PP.Connection }
 
 -- |Information for connnecting to a Redis server.
 --
