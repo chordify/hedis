@@ -29,7 +29,9 @@ import qualified Database.Redis.ConnectionContext as CC
 import Database.Redis.Commands
     ( ping
     , select
-    , auth
+    , authOpts
+    , defaultAuthOpts
+    , AuthOpts(..)
     , clusterSlots
     , command
     , ClusterSlotsResponse(..)
@@ -60,11 +62,14 @@ data Connection
 --
 data ConnectInfo = ConnInfo
     { connectHost           :: NS.HostName
+    -- ^ Ignored when 'connectPort' is a 'UnixSocket'
     , connectPort           :: CC.PortID
     , connectAuth           :: Maybe B.ByteString
     -- ^ When the server is protected by a password, set 'connectAuth' to 'Just'
     --   the password. Each connection will then authenticate by the 'auth'
     --   command.
+    , connectUsername       :: Maybe B.ByteString
+    -- ^ When ACL is used set 'connectUsername' as the user.
     , connectDatabase       :: Integer
     -- ^ Each connection will 'select' the database with the given index.
     , connectMaxConnections :: Int
@@ -95,6 +100,7 @@ instance Exception ConnectError
 --  connectHost           = \"localhost\"
 --  connectPort           = PortNumber 6379 -- Redis default port
 --  connectAuth           = Nothing         -- No password
+--  connectUsername       = Nothing         -- No user
 --  connectDatabase       = 0               -- SELECT database 0
 --  connectMaxConnections = 50              -- Up to 50 connections
 --  connectMaxIdleTime    = 30              -- Keep open for 30 seconds
@@ -107,6 +113,7 @@ defaultConnectInfo = ConnInfo
     { connectHost           = "localhost"
     , connectPort           = CC.PortNumber 6379
     , connectAuth           = Nothing
+    , connectUsername       = Nothing
     , connectDatabase       = 0
     , connectMaxConnections = 50
     , connectMaxIdleTime    = 30
@@ -129,7 +136,7 @@ createConnection ConnInfo{..} = do
         case connectAuth of
             Nothing   -> return ()
             Just pass -> do
-              resp <- auth pass
+              resp <- authOpts pass defaultAuthOpts{ authOptsUsername = connectUsername}
               case resp of
                 Left r -> liftIO $ throwIO $ ConnectAuthError r
                 _      -> return ()
